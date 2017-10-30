@@ -117,14 +117,23 @@ int main(){
     	arpH->arp_sha[2], arpH->arp_sha[3], arpH->arp_sha[4], arpH->arp_sha[5]);
     printf("%d\n", arpH->arp_op);
     printf("sender protoc: %d\n", arpH->arp_spa[0]); 
-   
+       
     
     char replyBuffer[42];
     struct ether_header *outEther = (struct ether_header*)(replyBuffer);       
-    struct ether_arp arpResp;
-    memcpy(outEther->ether_dhost, etherH->ether_shost, 6); 	
+    struct ether_arp *arpResp = (struct ether_arp*)(replyBuffer+14);
+    
+    memcpy(outEther->ether_dhost, etherH->ether_shost, 6); 
     memcpy(outEther->ether_shost, etherH->ether_dhost, 6);
-    outEther->ether_type=1544;
+    outEther->ether_type=0x0608;
+    arpResp->ea_hdr.ar_hrd = 0x100;
+    arpResp->ea_hdr.ar_pro = 0x8;
+    arpResp->ea_hdr.ar_hln = 0x6;
+    arpResp->ea_hdr.ar_pln = 0x4;
+    arpResp->ea_hdr.ar_op = 0x2;
+   
+
+   
 // memcpy(outEther->ether_type, etherH->ether_type, 2);
     printf("\n");
     send(packet_socket, outEther, 42, 0);
