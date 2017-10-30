@@ -19,6 +19,8 @@ struct sockaddr eth0;
 
 int main(){
   int packet_socket;
+  struct sockaddr_ll *mymac;
+
   //get list of interfaces (actually addresses)
   struct ifaddrs *ifaddr, *tmp;
   if(getifaddrs(&ifaddr)==-1){
@@ -50,6 +52,10 @@ int main(){
 	  perror("socket");
 	  return 2;
 	}
+
+	mymac = (struct sockaddr_ll*)tmp->ifa_addr;
+	printf("Our Mac: %02x:%02x:%02x:%02x:%02x;%02x\n", mymac->sll_addr[0], mymac->sll_addr[1], mymac->sll_addr[2], mymac->sll_addr[3], mymac->sll_addr[4], mymac->sll_addr[5]);
+
 	//Bind the socket to the address, so we only get packets
 	//recieved on this specific interface. For packet sockets, the
 	//address structure is a struct sockaddr_ll (see the man page
@@ -124,7 +130,7 @@ int main(){
     struct ether_arp *arpResp = (struct ether_arp*)(replyBuffer+14);
     
     memcpy(outEther->ether_dhost, etherH->ether_shost, 6); 
-    memcpy(outEther->ether_shost, etherH->ether_dhost, 6);
+    memcpy(outEther->ether_shost, mymac->sll_addr, 6);
     outEther->ether_type=0x0608;
     arpResp->ea_hdr.ar_hrd = 0x100;
     arpResp->ea_hdr.ar_pro = 0x8;
