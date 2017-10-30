@@ -59,7 +59,7 @@ int main(){
 	if(bind(packet_socket,tmp->ifa_addr,sizeof(struct sockaddr_ll))==-1){
 	  perror("bind");
 	}
-
+	memcpy(&eth0, tmp->ifa_addr, sizeof(struct sockaddr));
 	//eth0 = (struct interface*) malloc(sizeof(struct interface));
 	//*eth0->ifa_addr = tmp->ifa_addr;
 	//eth0->ifa_name = tmp->ifa_name;
@@ -103,12 +103,9 @@ int main(){
     struct ether_header *etherH = (struct ether_header*)(buf);
     struct ether_arp *arpH = (struct ether_arp*)(buf+14);
     
-    printf("%lu\n", sizeof(struct ether_header));						   
     
-   // buildResponse(eth0, etherH, arpH);
-
     printf("Mac: %x:%x:%x:%x:%x:%x\n", etherH->ether_shost[0], etherH->ether_shost[1],
-    	etherH->ether_shost[2], etherH->ether_shost[3], etherH->ether_shost[4], etherH->ether_shost[5]);
+    etherH->ether_shost[2], etherH->ether_shost[3], etherH->ether_shost[4], etherH->ether_shost[5]);
 	printf("%d\n", arpH->arp_op);
     printf("type: %x\n", etherH->ether_type);
     printf("hardware: %x\n", ntohs(arpH->arp_hrd));
@@ -120,20 +117,25 @@ int main(){
     	arpH->arp_sha[2], arpH->arp_sha[3], arpH->arp_sha[4], arpH->arp_sha[5]);
     printf("%d\n", arpH->arp_op);
     printf("sender protoc: %d\n", arpH->arp_spa[0]); 
-    struct ether_header outEther;      
+   
+    
+    char replyBuffer[42];
+    struct ether_header *outEther = (struct ether_header*)(replyBuffer);       
     struct ether_arp arpResp;
-    outEther.ether_dhost = *etherH->ether_shost;
-
-        
- 
-    	    
- 	
-    int i;
+    memcpy(outEther->ether_dhost, etherH->ether_shost, 6); 	
+    memcpy(outEther->ether_shost, etherH->ether_dhost, 6);
+    outEther->ether_type=1544;
+// memcpy(outEther->ether_type, etherH->ether_type, 2);
+    printf("\n");
+    send(packet_socket, outEther, 42, 0);
+   
+    int i = send(packet_socket, replyBuffer, 14, 0);
+    printf("%d/n", i);
      //arpResp->arp_sha =
     //arpResp->arp_spa =
     //arpResp->arp_tha =
     //arpResp->arp_tpa =
-	
+    fprintf(stderr, "value of error: %d\n", errno);	
     //memcpy(arpResp->arp_sha,  
    // memcpy(arpResp->arp_tha, arpH->arp_sha, sizeof(arpH->arp_sha));
     //memcpy(arpResp->arp_sha, 
