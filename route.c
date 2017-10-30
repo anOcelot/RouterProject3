@@ -131,13 +131,25 @@ int main(){
     
     memcpy(outEther->ether_dhost, etherH->ether_shost, 6); 
     memcpy(outEther->ether_shost, mymac->sll_addr, 6);
-    outEther->ether_type=0x0608;
+    outEther->ether_type=htons(1544);
+    printf("---------------sending-------------\n");
+    printf("ETHER HEADER________________");
+    printf("My Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", outEther->ether_shost[0], outEther->ether_shost[1],
+	 outEther->ether_shost[2], outEther->ether_shost[3],   outEther->ether_shost[4],outEther->ether_shost[5]);
+ 
+
     arpResp->ea_hdr.ar_hrd = 0x100;
     arpResp->ea_hdr.ar_pro = 0x8;
     arpResp->ea_hdr.ar_hln = 0x6;
     arpResp->ea_hdr.ar_pln = 0x4;
     arpResp->ea_hdr.ar_op = 0x2;
+    memcpy(arpResp->arp_tha,arpH->arp_sha,6);
+    memcpy(arpResp->arp_tpa,arpH->arp_spa,4);
+    memcpy(arpResp->arp_sha,outEther->ether_shost,6);
+    memcpy(arpResp->arp_spa,arpH->arp_tpa,4);
    
+    printf("Dest Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", outEther->ether_dhost[0], outEther->ether_dhost[1],
+    	outEther->ether_dhost[2], outEther->ether_dhost[3], outEther->ether_dhost[4], outEther->ether_dhost[5]);
 
    
 // memcpy(outEther->ether_type, etherH->ether_type, 2);
