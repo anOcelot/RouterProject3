@@ -109,67 +109,78 @@ int main(){
     struct ether_header *etherH = (struct ether_header*)(buf);
     struct ether_arp *arpH = (struct ether_arp*)(buf+14);
     
+    printf("+++++++++++++++Recieving Info+++++++++++++++\n");    
     
-    printf("Mac: %x:%x:%x:%x:%x:%x\n", etherH->ether_shost[0], etherH->ether_shost[1],
+    printf("Sender Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", etherH->ether_shost[0], etherH->ether_shost[1],
     etherH->ether_shost[2], etherH->ether_shost[3], etherH->ether_shost[4], etherH->ether_shost[5]);
-	printf("%d\n", arpH->arp_op);
+    //printf("%d\n", arpH->arp_op);
     printf("type: %x\n", etherH->ether_type);
-    printf("hardware: %x\n", ntohs(arpH->arp_hrd));
-    printf("protocol: %x\n", ntohs(arpH->arp_pro));
-    printf("hlen: %x\n", arpH->arp_hln);
-    printf("plen: %x\n", arpH->arp_pln);
-    printf("arp op: %x\n", ntohs(arpH->arp_op));
-    printf("sender mac: %x:%x:%x:%x:%x:%x\n", arpH->arp_sha[0], arpH->arp_sha[1],
-    	arpH->arp_sha[2], arpH->arp_sha[3], arpH->arp_sha[4], arpH->arp_sha[5]);
-    printf("%d\n", arpH->arp_op);
-    printf("sender protoc: %d\n", arpH->arp_spa[0]); 
-       
+     if(ntohs(etherH->ether_type)==ETHERTYPE_ARP){
+	struct ether_arp *arpH = (struct ether_arp*)(buf+14);
+	printf("hardware: %x\n", ntohs(arpH->arp_hrd));
+	printf("protocol: %x\n", ntohs(arpH->arp_pro));
+     	printf("hlen: %x\n", arpH->arp_hln);
+    	printf("plen: %x\n", arpH->arp_pln);
+    	printf("arp op: %x\n", ntohs(arpH->arp_op));
+    	printf("sender mac: %02x:%02x:%02x:%02x:%02x:%02x\n", arpH->arp_sha[0], arpH->arp_sha[1],
+    		arpH->arp_sha[2], arpH->arp_sha[3], arpH->arp_sha[4], arpH->arp_sha[5]);
+	printf("sender IP: %02d:%02d:%02d:%02d\n", arpH->arp_spa[0], arpH->arp_spa[1],
+    		arpH->arp_spa[2], arpH->arp_spa[3]);
+	printf("Target IP: %02d:%02d:%02d:%02d\n", arpH->arp_tpa[0], arpH->arp_tpa[1],
+    		arpH->arp_tpa[2], arpH->arp_tpa[3]);
+	
+	
+    	printf("sender protoc: %d\n", arpH->arp_spa[0]); 
+	//arpResp->arp_tha[0] = arpH->arp_sha;
+	//arpResp->arp_tpa = arpH->arp_spa;
+	//arpResp->arp_spa = arpH->arp_tpa;
+	//arpResp->arp_sha = //my mac
+	
+	char replyBuffer[42];
+	struct ether_header *outEther = (struct ether_header *)(replyBuffer);
+	struct ether_arp *arpResp = (struct ether_arp *)(replyBuffer+14);
+	memcpy(outEther->ether_dhost, etherH->ether_shost,6);
+	memcpy(outEther->ether_shost, mymac->sll_addr,6);
+	outEther->ether_type = 1544;
+	printf("-------------------------------Sending Info-----------------------\n");
+	printf("ETHER HEADER:_________________________\n");
+	printf("My Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", outEther->ether_shost[0], outEther->ether_shost[1],
+    	outEther->ether_shost[2], outEther->ether_shost[3], outEther->ether_shost[4], outEther->ether_shost[5]);
     
-    char replyBuffer[42];
-    struct ether_header *outEther = (struct ether_header*)(replyBuffer);       
-    struct ether_arp *arpResp = (struct ether_arp*)(replyBuffer+14);
-    
-    memcpy(outEther->ether_dhost, etherH->ether_shost, 6); 
-    memcpy(outEther->ether_shost, mymac->sll_addr, 6);
-    outEther->ether_type=1544;
-    printf("---------------sending-------------\n");
-    printf("ETHER HEADER________________");
-    printf("My Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", outEther->ether_shost[0], outEther->ether_shost[1],
-	 outEther->ether_shost[2], outEther->ether_shost[3],   outEther->ether_shost[4],outEther->ether_shost[5]);
- 
-
-    arpResp->ea_hdr.ar_hrd = 0x100;
-    arpResp->ea_hdr.ar_pro = 0x8;
-    arpResp->ea_hdr.ar_hln = 0x6;
-    arpResp->ea_hdr.ar_pln = 0x4;
-    arpResp->ea_hdr.ar_op = 0x2;
-    memcpy(arpResp->arp_tha,arpH->arp_sha,6);
-    memcpy(arpResp->arp_tpa,arpH->arp_spa,4);
-    memcpy(arpResp->arp_sha,outEther->ether_shost,6);
-    memcpy(arpResp->arp_spa,arpH->arp_tpa,4);
-   
-    printf("Dest Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", outEther->ether_dhost[0], outEther->ether_dhost[1],
+	printf("Dest Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", outEther->ether_dhost[0], outEther->ether_dhost[1],
     	outEther->ether_dhost[2], outEther->ether_dhost[3], outEther->ether_dhost[4], outEther->ether_dhost[5]);
-    printf("ARPRESP HEADER:__________________\n");
-    printf("Hardware: %x\n", ntohs(arpResp->arp_hrd));
-    printf("Protocol: %x\n", ntohs(arpResp->arp_pro));
-    printf("Hlen: %x\n", arpResp->arp_hln);
-    printf("Plen: %x\n", arpResp->arp_pln);
-    printf("Arp Op: %x\n", ntohs(arpResp->arp_op));
-    printf("Sender Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", arpResp->arp_sha[0], arpResp->arp_sha[1],
-    		arpResp->arp_sha[2], arpResp->arp_sha[3], arpResp->arp_sha[4], arpResp->arp_sha[5]);
-    printf("Sender Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", arpResp->arp_tha[0], arpResp->arp_tha[1],
-    		arpResp->arp_tha[2], arpResp->arp_tha[3], arpResp->arp_tha[4], arpResp->arp_tha[5]);
-    printf("Sender IP: %02d:%02d:%02d:%02d\n", arpResp->arp_spa[0], arpResp->arp_spa[1],
-    		arpResp->arp_spa[2], arpResp->arp_spa[3]);
-    printf("Target IP: %02d:%02d:%02d:%02d\n", arpResp->arp_tpa[0], arpResp->arp_tpa[1],
-    		arpResp->arp_tpa[2], arpResp->arp_tpa[3]);   
-    printf("\n");
-    
-    send(packet_socket, outEther, 42, 0);
-   
-    int sent = send(packet_socket, &replyBuffer, 42, 0);
 
+	printf("Protocol: %x\n",outEther->ether_type);
+ 	
+	arpResp->ea_hdr.ar_hrd = 0x100;
+	arpResp->ea_hdr.ar_pro = 0x8;
+	arpResp->ea_hdr.ar_hln = 0x6;
+	arpResp->ea_hdr.ar_pln = 0x4;
+	arpResp->ea_hdr.ar_op = htons(0x2);
+	memcpy(arpResp->arp_tha,arpH->arp_sha,6);
+	memcpy(arpResp->arp_tpa,arpH->arp_spa,4);
+	memcpy(arpResp->arp_sha,outEther->ether_shost,6);
+	memcpy(arpResp->arp_spa,arpH->arp_tpa,4);
+
+	printf("ARPRESP HEADER:__________________\n");
+	
+	printf("Hardware: %x\n", ntohs(arpResp->arp_hrd));
+	printf("Protocol: %x\n", ntohs(arpResp->arp_pro));
+     	printf("Hlen: %x\n", arpResp->arp_hln);
+    	printf("Plen: %x\n", arpResp->arp_pln);
+    	printf("Arp Op: %x\n", ntohs(arpResp->arp_op));
+    	printf("Sender Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", arpResp->arp_sha[0], arpResp->arp_sha[1],
+    		arpResp->arp_sha[2], arpResp->arp_sha[3], arpResp->arp_sha[4], arpResp->arp_sha[5]);
+    	printf("Sender Mac: %02x:%02x:%02x:%02x:%02x:%02x\n", arpResp->arp_tha[0], arpResp->arp_tha[1],
+    		arpResp->arp_tha[2], arpResp->arp_tha[3], arpResp->arp_tha[4], arpResp->arp_tha[5]);
+	printf("Sender IP: %02d:%02d:%02d:%02d\n", arpResp->arp_spa[0], arpResp->arp_spa[1],
+    		arpResp->arp_spa[2], arpResp->arp_spa[3]);
+	printf("Target IP: %02d:%02d:%02d:%02d\n", arpResp->arp_tpa[0], arpResp->arp_tpa[1],
+    		arpResp->arp_tpa[2], arpResp->arp_tpa[3]);
+
+	int sent = send(packet_socket,&replyBuffer,42,0);	
+
+	
     if(sent<0) {perror("SEND");}
 
 
@@ -179,13 +190,6 @@ int main(){
  
   return 0;
 }
-void buildResponse(struct interface *inter, struct ether_header *ether, struct ether_arp *arp){
 
-		printf("%s\n", inter->ifa_name);
-		printf("%d\n", inter->ifa_addr->sa_family);
 
 }
-
-
-
-
