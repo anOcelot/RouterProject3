@@ -7,6 +7,8 @@
 #include <ifaddrs.h>
 #include <netinet/if_ether.h>
 #include <string.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
 struct interface{
 	
 	char *ifa_name;
@@ -187,7 +189,53 @@ int main(){
 	    
 
     }
- 
+
+     if(ntohs(etherH->ether_type)==ETHERTYPE_IP){
+	printf("Got IPV4 packet!\n");   
+	struct ip *ipH = (struct ip *)(buf+14);
+	
+	printf("IP HEADER: --------------------------------- \n");
+	//printf("Target IP: %02d:%02d:%02d:%02d\n", ipH->ip_src[0],ipH->ip_src[1],ipH->ip_src[2],ipH->ip_src[3]);
+	//printf("Target IP: %02d:%02d:%02d:%02d\n", ipH->ip_dst[0],ipH->ip_dst[1],ipH->ip_dst[2],ipH->ip_dst[3]);
+//	char *sip = inet_ntoa(ipH->ip_src);
+//	char *dip = inet_ntoa(ipH->ip_dst);
+//	printf("%s\n",sip);
+//	printf("%s\n",dip); 
+//	printf("%d\n",(unsigned int)ipH->ip_p);
+	if((unsigned int)ipH->ip_p==1){
+		printf("Got ICMP Packet\n");
+		//getting and building ICMP
+		char replyBuffer[98];
+		struct ip *ipreply = (struct ip *)(replyBuffer + 14);
+		ipreply->ip_v=0x4;
+		ipreply->ip_hl=0x5;
+		ipreply->ip_tos=0x00;
+		ipreply->ip_len=0x5400;
+		ipreply->ip_id=0x0000;
+                ipreply->ip_off=0x40;
+		ipreply->ip_ttl=0x40;
+		memcpy(ipreply->ip_dst.s_addr, ipH->ip_src.s_addr, 4);
+//		struct ether_header *outEther = (struct ether_header *)(replyBuffer);
+//		struct ip *ipHR = (struct ip *)(replyBuffer+14);
+//		memcpy(outEther->ether_dhost, etherH->ether_shost,6);
+//		memcpy(outEther->ether_shost, mymac->sll_addr,6);
+//		outEther->ether_type = 0x800;
+//		//IP building
+//		ipHR->ip_hl = 5;
+//		ipHR->ip_v = 4;
+//		memcpy(ipHR->ip_tos,ipH->ip_tos,1);
+//		ipHR->ip_len = sizeof(struct ip) + sizeof(struct icmphdr);
+//		ipHR->ip_id = 56;
+//		ipHR->ip_off=0;
+//		ipHR->ip_ttl = 64;
+//		//ipHR->ip_sum;
+//		memcpy(ipHR->ip_src,ipH->ip_dst,4);
+//		memcpy(ipHR->ip_src,ipH->ip_dst,4);
+//		memcpy(ipHR->ip_src,ipH->ip_dst,4);
+//		memcpy(ipHR->ip_src,ipH->ip_dst,4);
+	}
+	
+	} 
   return 0;
 }
 
